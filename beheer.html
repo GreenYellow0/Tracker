@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gegevensbeheer</title>
+</head>
+<body>
+    <h1>Beheer van Voortgangsgegevens</h1>
+
+    <h2>Gegevens Exporteren</h2>
+    <button onclick="exportData()">Gegevens Exporteren</button>
+
+    <h2>Gegevens Importeren</h2>
+    <input type="file" id="fileInput" onchange="importData(event)" />
+
+    <script>
+        let logs = JSON.parse(localStorage.getItem('logs')) || [];
+
+        function exportData() {
+            const jsonData = JSON.stringify(logs);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'voortgangslogboek.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                logs = data || [];
+                updateLocalStorage();
+                alert("Gegevens succesvol geïmporteerd. Ga terug naar het logboek om de bijgewerkte grafiek te bekijken.");
+            };
+            reader.readAsText(file);
+        }
+
+        function updateLocalStorage() {
+            localStorage.setItem('logs', JSON.stringify(logs));
+        }
+    </script>
+    <br>
+    <a href="index.html">Ga terug naar Voortgangslogboek</a>
+</body>
+</html>

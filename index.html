@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voortgangslogboek</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <h1>Dagelijks Logboek voor Pornogebruik</h1>
+
+    <form id="logForm">
+        <label for="username">Naam:</label>
+        <input type="text" id="username" required><br><br>
+
+        <label for="date">Datum:</label>
+        <input type="date" id="date" required><br><br>
+
+        <h3>1. Tijd van het gebruik:</h3>
+        <label for="startTime">Begin:</label>
+        <input type="time" id="startTime" required><br><br>
+
+        <label for="endTime">Einde:</label>
+        <input type="time" id="endTime" required><br><br>
+
+        <h3>2. Reden voor het gebruik:</h3>
+        <input type="checkbox" id="boredom" value="Verveling"> Verveling<br>
+        <input type="checkbox" id="stress" value="Stress"> Stress<br>
+        <input type="checkbox" id="loneliness" value="Eenzaamheid"> Eenzaamheid<br>
+        <input type="checkbox" id="habit" value="Gewoonte"> Gewoonte<br>
+        <label for="otherReason">Andere reden:</label>
+        <input type="text" id="otherReason"><br><br>
+
+        <h3>3. Gemoedstoestand vooraf:</h3>
+        <input type="checkbox" id="happy" value="Gelukkig"> Gelukkig<br>
+        <input type="checkbox" id="sad" value="Verdrietig"> Verdrietig<br>
+        <input type="checkbox" id="stressed" value="Gestrest"> Gestrest<br>
+        <input type="checkbox" id="bored" value="Verveeld"> Verveeld<br>
+        <input type="checkbox" id="relieved" value="Opgelucht"> Opgelucht<br>
+        <label for="otherEmotion">Andere emotie:</label>
+        <input type="text" id="otherEmotion"><br><br>
+
+        <h3>4. Type content:</h3>
+        <input type="checkbox" id="softcore" value="Softcore"> Softcore<br>
+        <input type="checkbox" id="amateur" value="Amateur"> Amateur<br>
+        <input type="checkbox" id="fetish" value="Fetish"> Fetish<br>
+        <input type="checkbox" id="hardcore" value="Hardcore"> Hardcore<br>
+        <label for="otherContent">Anderen:</label>
+        <input type="text" id="otherContent"><br><br>
+
+        <h3>5. Beoordeling van de content:</h3>
+        <input type="radio" name="contentRating" value="Mild" required> Mild<br>
+        <input type="radio" name="contentRating" value="Gematigd"> Gematigd<br>
+        <input type="radio" name="contentRating" value="Extreem"> Extreem<br><br>
+
+        <h3>6. Orgasme::</h3>
+        <input type="radio" name="orgasm" value="Ja" required> Ja<br>
+        <input type="radio" name="orgasm" value="Nee"> Nee<br><br>
+
+        <h3>7. Reflectie na het gebruik:</h3>
+        <input type="checkbox" id="relievedAfter" value="Opgelucht"> Opgelucht<br>
+        <input type="checkbox" id="guilty" value="Schuldig"> Schuldig<br>
+        <input type="checkbox" id="indifferent" value="Onverschillig"> Onverschillig<br>
+        <input type="checkbox" id="satisfied" value="Tevreden"> Tevreden<br>
+        <label for="otherFeeling">Andere gevoelens:</label>
+        <input type="text" id="otherFeeling"><br><br>
+
+        <h3>8. Beoordeling van de ervaring:</h3>
+        <input type="radio" name="experienceRating" value="Positief" required> Positief<br>
+        <input type="radio" name="experienceRating" value="Neutraal"> Neutraal<br>
+        <input type="radio" name="experienceRating" value="Negatief"> Negatief<br><br>
+
+        <h3>9. Vooruitgang en doelen:</h3>
+        <input type="checkbox" id="goal1" value="Ja, ik heb minder extreme content bekeken."> Ja, ik heb minder extreme content bekeken.<br>
+        <input type="checkbox" id="goal2" value="Ja, ik heb mijn tijd beperkt."> Ja, ik heb mijn tijd beperkt.<br>
+        <input type="checkbox" id="goal3" value="Nee, ik heb langer gekeken dan gepland."> Nee, ik heb langer gekeken dan gepland.<br>
+        <input type="checkbox" id="goal4" value="Nee, ik heb extremere content bekeken dan bedoeld."> Nee, ik heb extremere content bekeken dan bedoeld.<br><br>
+
+        <button type="button" onclick="addLog()">Toevoegen</button>
+    </form>
+
+    <h2>Jouw Voortgang</h2>
+    <canvas id="progressChart" width="400" height="200"></canvas>
+
+    <script>
+        let logs = JSON.parse(localStorage.getItem('logs')) || [];
+        let progressChart;
+
+        function addLog() {
+            const username = document.getElementById("username").value;
+            const date = document.getElementById("date").value;
+            const startTime = document.getElementById("startTime").value;
+            const endTime = document.getElementById("endTime").value;
+
+            if (!username || !date || !startTime || !endTime) {
+                alert("Vul alle verplichte velden in!");
+                return;
+            }
+
+            const reasons = getCheckedValues(['boredom', 'stress', 'loneliness', 'habit']);
+            const otherReason = document.getElementById("otherReason").value;
+            const emotions = getCheckedValues(['happy', 'sad', 'stressed', 'bored', 'relieved']);
+            const otherEmotion = document.getElementById("otherEmotion").value;
+            const contentTypes = getCheckedValues(['softcore', 'amateur', 'fetish', 'hardcore']);
+            const otherContent = document.getElementById("otherContent").value;
+            const contentRating = document.querySelector('input[name="contentRating"]:checked') ? document.querySelector('input[name="contentRating"]:checked').value : null;
+            const orgasm = document.querySelector('input[name="orgasm"]:checked') ? document.querySelector('input[name="orgasm"]:checked').value : null;
+            const feelingsAfter = getCheckedValues(['relievedAfter', 'guilty', 'indifferent', 'satisfied']);
+            const otherFeeling = document.getElementById("otherFeeling").value;
+            const experienceRating = document.querySelector('input[name="experienceRating"]:checked') ? document.querySelector('input[name="experienceRating"]:checked').value : null;
+            const goals = getCheckedValues(['goal1', 'goal2', 'goal3', 'goal4']);
+
+            if (!contentRating || !orgasm || !experienceRating) {
+                alert("Zorg ervoor dat alle vragen met een sterretje (*) zijn beantwoord.");
+                return;
+            }
+
+            const duration = calculateDuration(startTime, endTime);
+
+            const log = {
+                username,
+                date,
+                duration,
+                reasons: reasons.concat(otherReason ? [otherReason] : []),
+                emotions: emotions.concat(otherEmotion ? [otherEmotion] : []),
+                contentTypes: contentTypes.concat(otherContent ? [otherContent] : []),
+                contentRating,
+                orgasm,
+                feelingsAfter: feelingsAfter.concat(otherFeeling ? [otherFeeling] : []),
+                experienceRating,
+                goals
+            };
+
+            logs.push(log);
+            updateLocalStorage();
+            updateChart();
+        }
+
+        function calculateDuration(startTime, endTime) {
+            const start = new Date(`1970-01-01T${startTime}Z`);
+            const end = new Date(`1970-01-01T${endTime}Z`);
+            return (end - start) / 60000; // Return duration in minutes
+        }
+
+        function getCheckedValues(ids) {
+            return ids.filter(id => document.getElementById(id).checked).map(id => document.getElementById(id).value);
+        }
+
+        function updateLocalStorage() {
+            localStorage.setItem('logs', JSON.stringify(logs));
+        }
+
+        function updateChart() {
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    if (progressChart) {
+        progressChart.destroy(); // Destroy the previous chart instance
+    }
+
+    const dates = logs.map(log => {
+        if (log.date && log.startTime) {
+            const [year, month, day] = log.date.split('-');
+            const [hour, minute] = log.startTime.split(':');
+            const datetime = new Date(year, month - 1, day, hour, minute);
+            return datetime;
+        }
+        return new Date();  // Return a placeholder date to avoid breaking the chart
+    });
+
+    const durations = logs.map(log => log.duration);
+
+    const orgasmData = logs.map(log => log.orgasm === "Ja" ? log.duration : null);
+    const softcoreData = logs.map(log => log.contentTypes.includes("Softcore") ? log.duration : null);
+    const amateurData = logs.map(log => log.contentTypes.includes("Amateur") ? log.duration : null);
+    const fetishData = logs.map(log => log.contentTypes.includes("Fetish") ? log.duration : null);
+    const hardcoreData = logs.map(log => log.contentTypes.includes("Hardcore") ? log.duration : null);
+
+    progressChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Totale tijd besteed (minuten)',
+                    data: durations,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false
+                },
+                {
+                    label: 'Orgasme',
+                    data: orgasmData,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                },
+                {
+                    label: 'Softcore',
+                    data: softcoreData,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointStyle: 'rectRot',
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(54, 162, 235, 1)'
+                },
+                {
+                    label: 'Amateur',
+                    data: amateurData,
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointStyle: 'triangle',
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(255, 206, 86, 1)'
+                },
+                {
+                    label: 'Fetish',
+                    data: fetishData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointStyle: 'rectRounded',
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                },
+                {
+                    label: 'Hardcore',
+                    data: hardcoreData,
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointStyle: 'star',
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(153, 102, 255, 1)'
+                }
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'minute',
+                        tooltipFormat: 'MMM d, yyyy, h:mm a'
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+
+
+
+
+
+        // Initial chart rendering with stored data
+        window.onload = updateChart;
+
+
+        function addLog() {
+    const username = document.getElementById("username").value;
+    const date = document.getElementById("date").value;
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+
+    if (!username || !date || !startTime || !endTime) {
+        alert("Vul alle verplichte velden in!");
+        return;
+    }
+
+    const reasons = getCheckedValues(['boredom', 'stress', 'loneliness', 'habit']);
+    const otherReason = document.getElementById("otherReason").value;
+    const emotions = getCheckedValues(['happy', 'sad', 'stressed', 'bored', 'relieved']);
+    const otherEmotion = document.getElementById("otherEmotion").value;
+    const contentTypes = getCheckedValues(['softcore', 'amateur', 'fetish', 'hardcore']);
+    const otherContent = document.getElementById("otherContent").value;
+    const contentRating = document.querySelector('input[name="contentRating"]:checked') ? document.querySelector('input[name="contentRating"]:checked').value : null;
+    const orgasm = document.querySelector('input[name="orgasm"]:checked') ? document.querySelector('input[name="orgasm"]:checked').value : null;
+    const feelingsAfter = getCheckedValues(['relievedAfter', 'guilty', 'indifferent', 'satisfied']);
+    const otherFeeling = document.getElementById("otherFeeling").value;
+    const experienceRating = document.querySelector('input[name="experienceRating"]:checked') ? document.querySelector('input[name="experienceRating"]:checked').value : null;
+    const goals = getCheckedValues(['goal1', 'goal2', 'goal3', 'goal4']);
+
+    if (!contentRating || !orgasm || !experienceRating) {
+        alert("Zorg ervoor dat alle vragen met een sterretje (*) zijn beantwoord.");
+        return;
+    }
+
+    const duration = calculateDuration(startTime, endTime);
+
+    const log = {
+        username,
+        date,
+        startTime,  // Zorg ervoor dat startTime hier wordt opgeslagen
+        duration,
+        reasons: reasons.concat(otherReason ? [otherReason] : []),
+        emotions: emotions.concat(otherEmotion ? [otherEmotion] : []),
+        contentTypes: contentTypes.concat(otherContent ? [otherContent] : []),
+        contentRating,
+        orgasm,
+        feelingsAfter: feelingsAfter.concat(otherFeeling ? [otherFeeling] : []),
+        experienceRating,
+        goals
+    };
+
+    logs.push(log);
+    updateLocalStorage();
+    updateChart();
+}
+
+
+    </script>
+    <br>
+    <a href="beheer.html">Ga naar Beheer Pagina (Import/Export)</a>
+</body>
+</html>
